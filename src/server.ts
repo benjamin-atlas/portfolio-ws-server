@@ -3,8 +3,10 @@ import PortfolioWsMessage from "./types/PortfolioWsMessage";
 import PortfolioWsMessageType from "./types/PortfolioWsMessageType";
 import CommandProcessor from "./factories/CommandProcessor";
 import GithubCommandProcessorFactory from "./factories/GithubStatsCommandProcessorFactory";
+import { config } from "dotenv";
 
 const server: WebSocketServer = new WebSocketServer({ port: 8080 });
+config();
 
 server.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
