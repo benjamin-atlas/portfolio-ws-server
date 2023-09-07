@@ -1,13 +1,12 @@
-import { Socket } from "dgram";
-import { Server } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import PortfolioWsMessage from "./types/PortfolioWsMessage";
 import PortfolioWsMessageType from "./types/PortfolioWsMessageType";
 import CommandProcessor from "./factories/CommandProcessor";
 import GithubCommandProcessorFactory from "./factories/GithubStatsCommandProcessorFactory";
 
-const server: Server = new Server({ port: 8080 });
+const server: WebSocketServer = new WebSocketServer({ port: 8080 });
 
-server.on("connection", (socket: Socket) => {
+server.on("connection", (socket: WebSocket) => {
   console.log("Client connected");
 
   socket.on("message", (message: string) => {
@@ -24,8 +23,9 @@ server.on("connection", (socket: Socket) => {
     let invalidType: boolean = false;
     switch (pfwsMessage.messageType) {
       case PortfolioWsMessageType.GithubStats:
-        commandProcessor =
-          new GithubCommandProcessorFactory().createCommandProcessor();
+        commandProcessor = new GithubCommandProcessorFactory({
+          socket,
+        }).createCommandProcessor();
         break;
       default:
         socket.send(
