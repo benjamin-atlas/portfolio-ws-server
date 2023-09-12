@@ -3,6 +3,7 @@ import GithubCommandProps from "../types/GithubCommandProps";
 import CommandProcessor from "./CommandProcessor";
 import axios, { AxiosHeaders, AxiosResponse } from "axios";
 import GithubMetrics from "../types/GithubMetrics";
+import { resolve } from "path";
 
 class GithubStatsCommandProcessor extends CommandProcessor {
   constructor(private props: GithubCommandProps) {
@@ -64,22 +65,22 @@ class GithubStatsCommandProcessor extends CommandProcessor {
           userRepositories,
           headers
         );
-        metrics.mergedPRs = await getPRsMergedForUser(
-          username,
-          userRepositories,
-          headers
-        );
+        // metrics.mergedPRs = await getPRsMergedForUser(
+        //   username,
+        //   userRepositories,
+        //   headers
+        // );
         metrics.linesOfCodeWritten = await getLinesOfCodeWrittenForUser(
           username,
           userRepositories,
           headers
         );
-        metrics.repositoriesContributed =
-          await getRepositoriesContributedForUser(
-            username,
-            userRepositories,
-            headers
-          );
+        // metrics.repositoriesContributed =
+        //   await getRepositoriesContributedForUser(
+        //     username,
+        //     userRepositories,
+        //     headers
+        //   );
       } catch (error) {
         console.error(`[Error] Error getting github metrics:  ${error}`);
       }
@@ -140,7 +141,69 @@ class GithubStatsCommandProcessor extends CommandProcessor {
       repositories: any[],
       authHeaders: AxiosHeaders
     ): Promise<number> {
-      return 0;
+      let totalLinesOfCodeWritten: number = 0;
+
+      for (const repo of repositories) {
+        try {
+          let response: AxiosResponse = await axios.get(
+            `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
+            {
+              headers: authHeaders,
+            }
+          );
+
+          if (response.status === 202) {
+            // Repeatedly query again until either 200 or something besides the repeat status code.
+            await new Promise<void>(
+              (repeatQueryResolver, repeatQueryRejector) => {
+                const intervalID: NodeJS.Timeout = setInterval(async () => {
+                  response = await axios.get(
+                    `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
+                    {
+                      headers: authHeaders,
+                    }
+                  );
+
+                  if (response.status === 200) {
+                    repeatQueryResolver();
+                    clearInterval(intervalID);
+                  } else if (response.status !== 202) {
+                    repeatQueryRejector();
+                    clearInterval(intervalID);
+                  }
+                }, 5000);
+              }
+            );
+          }
+
+          if (response.status === 200) {
+            const contributorsData = response.data;
+
+            if (contributorsData && contributorsData.find) {
+              const userContributions = contributorsData.find(
+                (contributor: any) => contributor.author.login === username
+              )?.weeks;
+
+              if (userContributions) {
+                const userLinesOfCodeForRepo: number = userContributions.reduce(
+                  (total: number, week: any) => total + week.a - week.d,
+                  0
+                );
+                totalLinesOfCodeWritten += userLinesOfCodeForRepo;
+              }
+            }
+          } else {
+            console.error(
+              `[ERROR] Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]. HTTP Response Code [${response.status}]`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `[ERROR] Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]: ${error}`
+          );
+        }
+      }
+      return totalLinesOfCodeWritten;
     }
 
     async function getRepositoriesContributedForUser(
