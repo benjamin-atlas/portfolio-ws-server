@@ -60,27 +60,17 @@ class GithubStatsCommandProcessor extends CommandProcessor {
 
         const userRepositories = userRepositoriesResponse.data;
 
-        metrics.commits = await getCommitsForUser(
-          username,
-          userRepositories,
-          headers
-        );
-        // metrics.mergedPRs = await getPRsMergedForUser(
-        //   username,
-        //   userRepositories,
-        //   headers
-        // );
-        metrics.linesOfCodeWritten = await getLinesOfCodeWrittenForUser(
-          username,
-          userRepositories,
-          headers
-        );
-        // metrics.repositoriesContributed =
-        //   await getRepositoriesContributedForUser(
-        //     username,
-        //     userRepositories,
-        //     headers
-        //   );
+        [
+          metrics.commits,
+          metrics.mergedPRs,
+          metrics.linesOfCodeWritten,
+          metrics.repositoriesContributed,
+        ] = await Promise.all([
+          getCommitsForUser(username, userRepositories, headers),
+          getPRsMergedForUser(username, userRepositories, headers),
+          getLinesOfCodeWrittenForUser(username, userRepositories, headers),
+          getRepositoriesContributedForUser(userRepositories),
+        ]);
       } catch (error) {
         console.error(`[Error] Error getting github metrics:  ${error}`);
       }
@@ -133,7 +123,53 @@ class GithubStatsCommandProcessor extends CommandProcessor {
       repositories: any[],
       authHeaders: AxiosHeaders
     ): Promise<number> {
-      return 0;
+      let totalPrs: number = 0;
+
+      for (const repo of repositories) {
+        let pullsResponse: AxiosResponse<any, any> | null = null;
+        let numberOfRelevantPRsOnPage: number = 0;
+        let pageNumber: number = 0;
+        let prsPerRepo: number = 0;
+
+        do {
+          try {
+            pageNumber++;
+            numberOfRelevantPRsOnPage = 0;
+
+            // TODO, if you save the last page number, you know where you should start the next time you fetch, which will save hella queries.
+            pullsResponse = await axios.get(
+              `${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}`,
+              {
+                headers: authHeaders,
+              }
+            );
+            numberOfRelevantPRsOnPage = pullsResponse?.data.reduce(
+              (numPrs: number, pr: any) =>
+                pr.user.login === username ||
+                pr.assignees.some(
+                  (assignee: any) => assignee.login === username
+                ) ||
+                pr.requested_reviewers.some(
+                  (reviewer: any) => reviewer.login === username
+                )
+                  ? numPrs + 1
+                  : numPrs,
+              0
+            );
+
+            prsPerRepo += numberOfRelevantPRsOnPage;
+          } catch (error) {
+            // TODO: I don't love how this behaves on error with the page number logic (what if it errors over and over?), but don't have the time to fix it right now.
+            console.error(
+              `[ERROR] Error getting PR count for page [${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}]:  ${error}`
+            );
+          }
+        } while (pullsResponse?.data.length === 100);
+
+        totalPrs += prsPerRepo;
+      }
+
+      return totalPrs;
     }
 
     async function getLinesOfCodeWrittenForUser(
@@ -207,11 +243,9 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     }
 
     async function getRepositoriesContributedForUser(
-      username: string,
-      repositories: any[],
-      authHeaders: AxiosHeaders
+      repositories: any[]
     ): Promise<number> {
-      return 0;
+      return repositories.length ?? 0;
     }
   }
 }
