@@ -4,19 +4,22 @@ import PortfolioWsMessageType from "./types/PortfolioWsMessageType";
 import CommandProcessor from "./factories/CommandProcessor";
 import GithubCommandProcessorFactory from "./factories/GithubStatsCommandProcessorFactory";
 import { config } from "dotenv";
+import Logger from "./utils/Logger";
 
 const server: WebSocketServer = new WebSocketServer({ port: 8080 });
 config();
 
 server.on("connection", (socket: WebSocket) => {
-  console.log("Client connected");
+  Logger.appendLog("Client connected");
 
   socket.on("message", (message: string) => {
     const pfwsMessage: PortfolioWsMessage = JSON.parse(
       message
     ) as PortfolioWsMessage;
-    console.log(`Received message of type: ${pfwsMessage.messageType}`);
-    console.log(
+    Logger.appendDebugLog(
+      `Received message of type: ${pfwsMessage.messageType}`
+    );
+    Logger.appendDebugLog(
       `Received message with body: ${JSON.stringify(pfwsMessage.body, null, 2)}`
     );
 
@@ -37,7 +40,7 @@ server.on("connection", (socket: WebSocket) => {
     }
 
     if (!invalidType) {
-      console.log(
+      Logger.appendDebugLog(
         `Created command processor of type [${pfwsMessage.messageType}]`
       );
     }
@@ -49,6 +52,6 @@ server.on("connection", (socket: WebSocket) => {
   });
 
   socket.on("close", () => {
-    console.log("Client disconnected");
+    Logger.appendLog("Client disconnected");
   });
 });

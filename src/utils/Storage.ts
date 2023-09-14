@@ -22,7 +22,7 @@ class Storage {
           );
           await writeFile(this.DATASTORE_FILE, JSON.stringify({}));
         } else {
-          Logger.appendLog(`Error reading file: ${error.message}`);
+          Logger.appendError(`Error reading file: ${error.message}`);
           return false;
         }
       }
@@ -37,7 +37,13 @@ class Storage {
 
   public async Get(key: string): Promise<any> {
     if (!this.isLoaded) {
-      await this.Load();
+      const success: boolean = await this.Load();
+
+      if (!success) {
+        Logger.appendError(
+          `Unable to load to fetch value [${key}] from storage.`
+        );
+      }
     }
 
     return this.values[key];
@@ -48,7 +54,7 @@ class Storage {
       this.values[key] = value;
       await writeFile(this.DATASTORE_FILE, JSON.stringify(this.values));
     } catch (error: any) {
-      Logger.appendLog(error.toString());
+      Logger.appendError(error.toString());
     }
   }
 }

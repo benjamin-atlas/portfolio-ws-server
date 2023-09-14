@@ -3,6 +3,7 @@ import GithubCommandProps from "../types/GithubCommandProps";
 import CommandProcessor from "./CommandProcessor";
 import axios, { AxiosHeaders, AxiosResponse } from "axios";
 import GithubMetrics from "../types/GithubMetrics";
+import Logger from "../utils/Logger";
 
 class GithubStatsCommandProcessor extends CommandProcessor {
   constructor(private props: GithubCommandProps) {
@@ -33,7 +34,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
           );
         }
       } else {
-        console.log("Clearing interval");
+        Logger.appendDebugLog("Clearing interval for GH command processor.");
         clearInterval(intervalHandle);
       }
     }, 30000);
@@ -71,7 +72,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
           getRepositoriesContributedForUser(userRepositories),
         ]);
       } catch (error) {
-        console.error(`[Error] Error getting github metrics:  ${error}`);
+        Logger.appendError(`Error getting github metrics:  ${error}`);
       }
 
       return metrics;
@@ -104,8 +105,8 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             numberOfCommitsOnPage = commitsResponse.data.length;
           } catch (error) {
             // TODO: I don't love how this behaves on error with the page number logic (what if it errors over and over?), but don't have the time to fix it right now.
-            console.error(
-              `[ERROR] Error getting commit count for page [${repo.url}/commits?author=${username}&per_page=100&page=${pageNumber}]:  ${error}`
+            Logger.appendError(
+              `Error getting commit count for page [${repo.url}/commits?author=${username}&per_page=100&page=${pageNumber}]:  ${error}`
             );
           }
         } while (numberOfCommitsOnPage === 100);
@@ -159,8 +160,8 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             prsPerRepo += numberOfRelevantPRsOnPage;
           } catch (error) {
             // TODO: I don't love how this behaves on error with the page number logic (what if it errors over and over?), but don't have the time to fix it right now.
-            console.error(
-              `[ERROR] Error getting PR count for page [${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}]:  ${error}`
+            Logger.appendError(
+              `Error getting PR count for page [${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}]:  ${error}`
             );
           }
         } while (pullsResponse?.data.length === 100);
@@ -228,13 +229,13 @@ class GithubStatsCommandProcessor extends CommandProcessor {
               }
             }
           } else {
-            console.error(
-              `[ERROR] Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]. HTTP Response Code [${response.status}]`
+            Logger.appendError(
+              `Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]. HTTP Response Code [${response.status}]`
             );
           }
         } catch (error) {
-          console.error(
-            `[ERROR] Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]: ${error}`
+          Logger.appendError(
+            `Error getting lines written count for page [https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors]: ${error}`
           );
         }
       }
