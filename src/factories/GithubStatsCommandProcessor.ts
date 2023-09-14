@@ -50,7 +50,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
       const metrics: GithubMetrics = new GithubMetrics();
 
       try {
-        // Fetch the list of repositories for the user
+        Logger.appendDebugLog(`Fetching user [${username}] repos.`);
         const userRepositoriesResponse = await axios.get(
           `https://api.github.com/user/repos`,
           {
@@ -95,6 +95,9 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             pageNumber++;
             numberOfCommitsOnPage = 0;
 
+            Logger.appendDebugLog(
+              `Fetching commits for repo [${repo.name}], page [${pageNumber}].`
+            );
             // TODO, if you save the commit count from last time, theoretically you know the last page you should start the next time you fetch, which will save hella queries.
             commitsResponse = await axios.get(
               `${repo.url}/commits?author=${username}&per_page=100&page=${pageNumber}`,
@@ -136,6 +139,9 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             pageNumber++;
             numberOfRelevantPRsOnPage = 0;
 
+            Logger.appendDebugLog(
+              `Fetching pulls for repo [${repo.name}], page [${pageNumber}].`
+            );
             // TODO, if you save the last page number, you know where you should start the next time you fetch, which will save hella queries.
             pullsResponse = await axios.get(
               `${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}`,
@@ -181,6 +187,9 @@ class GithubStatsCommandProcessor extends CommandProcessor {
 
       for (const repo of repositories) {
         try {
+          Logger.appendDebugLog(
+            `Fetching contribution stats for repo [${repo.name}].`
+          );
           let response: AxiosResponse = await axios.get(
             `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
             {
@@ -190,26 +199,32 @@ class GithubStatsCommandProcessor extends CommandProcessor {
 
           if (response.status === 202) {
             // Repeatedly query again until either 200 or something besides the repeat status code.
-            await new Promise<void>(
-              (repeatQueryResolver, repeatQueryRejector) => {
-                const intervalID: NodeJS.Timeout = setInterval(async () => {
-                  response = await axios.get(
-                    `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
-                    {
-                      headers,
-                    }
-                  );
+            try {
+              await new Promise<void>(
+                (repeatQueryResolver, repeatQueryRejector) => {
+                  const intervalID: NodeJS.Timeout = setInterval(async () => {
+                    response = await axios.get(
+                      `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
+                      {
+                        headers,
+                      }
+                    );
 
-                  if (response.status === 200) {
-                    repeatQueryResolver();
-                    clearInterval(intervalID);
-                  } else if (response.status !== 202) {
-                    repeatQueryRejector();
-                    clearInterval(intervalID);
-                  }
-                }, 5000);
-              }
-            );
+                    if (response.status === 200) {
+                      repeatQueryResolver();
+                      clearInterval(intervalID);
+                    } else if (response.status !== 202) {
+                      repeatQueryRejector();
+                      clearInterval(intervalID);
+                    }
+                  }, 5000);
+                }
+              );
+            } catch (error) {
+              Logger.appendError(
+                `Unable to re-ping contributions status for [${repo.name}. Aborting. Error: ${error}`
+              );
+            }
           }
 
           if (response.status === 200) {

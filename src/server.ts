@@ -9,6 +9,8 @@ import Logger from "./utils/Logger";
 const server: WebSocketServer = new WebSocketServer({ port: 8080 });
 config();
 
+Logger.appendDebugLog("Application Started.");
+
 server.on("connection", (socket: WebSocket) => {
   Logger.appendLog("Client connected");
 
