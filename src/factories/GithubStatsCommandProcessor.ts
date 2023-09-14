@@ -3,7 +3,6 @@ import GithubCommandProps from "../types/GithubCommandProps";
 import CommandProcessor from "./CommandProcessor";
 import axios, { AxiosHeaders, AxiosResponse } from "axios";
 import GithubMetrics from "../types/GithubMetrics";
-import { resolve } from "path";
 
 class GithubStatsCommandProcessor extends CommandProcessor {
   constructor(private props: GithubCommandProps) {
@@ -54,7 +53,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
         const userRepositoriesResponse = await axios.get(
           `https://api.github.com/user/repos`,
           {
-            headers: headers,
+            headers,
           }
         );
 
@@ -81,7 +80,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     async function getCommitsForUser(
       username: string,
       repositories: any[],
-      authHeaders: AxiosHeaders
+      headers: AxiosHeaders
     ): Promise<number> {
       let totalCommits: number = 0;
 
@@ -99,7 +98,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             commitsResponse = await axios.get(
               `${repo.url}/commits?author=${username}&per_page=100&page=${pageNumber}`,
               {
-                headers: authHeaders,
+                headers,
               }
             );
             numberOfCommitsOnPage = commitsResponse.data.length;
@@ -121,7 +120,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     async function getPRsMergedForUser(
       username: string,
       repositories: any[],
-      authHeaders: AxiosHeaders
+      headers: AxiosHeaders
     ): Promise<number> {
       let totalPrs: number = 0;
 
@@ -140,7 +139,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
             pullsResponse = await axios.get(
               `${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}`,
               {
-                headers: authHeaders,
+                headers,
               }
             );
             numberOfRelevantPRsOnPage = pullsResponse?.data.reduce(
@@ -175,7 +174,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     async function getLinesOfCodeWrittenForUser(
       username: string,
       repositories: any[],
-      authHeaders: AxiosHeaders
+      headers: AxiosHeaders
     ): Promise<number> {
       let totalLinesOfCodeWritten: number = 0;
 
@@ -184,7 +183,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
           let response: AxiosResponse = await axios.get(
             `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
             {
-              headers: authHeaders,
+              headers,
             }
           );
 
@@ -196,7 +195,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
                   response = await axios.get(
                     `https://api.github.com/repos/${repo.owner.login}/${repo.name}/stats/contributors`,
                     {
-                      headers: authHeaders,
+                      headers,
                     }
                   );
 
