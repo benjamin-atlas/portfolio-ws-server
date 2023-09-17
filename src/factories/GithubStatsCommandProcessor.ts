@@ -16,8 +16,9 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     Logger.appendDebugLog("GHS socket command processing...");
 
     Storage.get("metrics").then((storedMetrics: GithubMetrics) => {
-      if (socket.readyState === WebSocket.OPEN) {
+      if (socket.readyState === WebSocket.OPEN && storedMetrics) {
         Logger.appendDebugLog("Sending stored metrics");
+        Logger.appendDebugLog(JSON.stringify(storedMetrics, null, 2));
         socket.send(JSON.stringify(storedMetrics));
       } else {
         Logger.appendDebugLog("No stored metrics to send");

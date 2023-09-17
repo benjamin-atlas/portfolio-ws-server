@@ -1,6 +1,7 @@
 import axios, { AxiosHeaders, AxiosResponse } from "axios";
 import GithubMetrics from "../types/GithubMetrics";
 import Logger from "../utils/Logger";
+import Storage from "./Storage";
 
 const getGHUserMetrics = async (
   username: string,
@@ -53,6 +54,20 @@ async function getCommitsForUser(
     let numberOfCommitsOnPage: number = 0;
     let pageNumber: number = 0;
 
+    try {
+      let lastQueriedPageNumber: number = await Storage.get(
+        `${username}_${repo.name}_last_commit_page`
+      );
+
+      if (lastQueriedPageNumber) {
+        pageNumber = lastQueriedPageNumber;
+      }
+    } catch (error) {
+      Logger.appendError(
+        `Unable to retrieve last queried commit page for user [${username}], repo [${repo.name}]: ${error}`
+      );
+    }
+
     do {
       try {
         pageNumber++;
@@ -61,7 +76,7 @@ async function getCommitsForUser(
         Logger.appendDebugLog(
           `Fetching commits for repo [${repo.name}], page [${pageNumber}].`
         );
-        // TODO, if you save the commit count from last time, theoretically you know the last page you should start the next time you fetch, which will save hella queries.
+
         commitsResponse = await axios.get(
           `${repo.url}/commits?author=${username}&per_page=100&page=${pageNumber}`,
           {
@@ -79,6 +94,17 @@ async function getCommitsForUser(
 
     const commitCount = 100 * (pageNumber - 1) + numberOfCommitsOnPage;
     totalCommits += commitCount;
+
+    try {
+      Logger.appendDebugLog(
+        `Storing last commit page info for user [${username}], repo [${repo.name}].`
+      );
+      Storage.store(`${username}_${repo.name}_last_commit_page`, pageNumber);
+    } catch (error) {
+      Logger.appendError(
+        `Error storing last queried commit page for user [${username}], repo [${repo.name}]:  ${error}`
+      );
+    }
   }
 
   return totalCommits;
@@ -97,6 +123,27 @@ async function getPRsMergedForUser(
     let pageNumber: number = 0;
     let prsPerRepo: number = 0;
 
+    try {
+      const lastPrPage: number = await Storage.get(
+        `${username}_${repo.name}_last_pr_page`
+      );
+      const lastPrCount: number = await Storage.get(
+        `${username}_${repo.name}_last_pr_count`
+      );
+      const lastPrPageCount: number = await Storage.get(
+        `${username}_${repo.name}_last_pr_page_count`
+      );
+
+      if (lastPrPage && lastPrCount && lastPrCount) {
+        pageNumber = lastPrPage;
+        prsPerRepo = lastPrCount - lastPrPageCount; // subtract the amount of the last queried page, since we'll be querying it again for updates.
+      }
+    } catch (error) {
+      Logger.appendError(
+        `Unable to retrieve last queried pr info for user [${username}], repo [${repo.name}] ${error}`
+      );
+    }
+
     do {
       try {
         pageNumber++;
@@ -105,7 +152,7 @@ async function getPRsMergedForUser(
         Logger.appendDebugLog(
           `Fetching pulls for repo [${repo.name}], page [${pageNumber}].`
         );
-        // TODO, if you save the last page number, you know where you should start the next time you fetch, which will save hella queries.
+
         pullsResponse = await axios.get(
           `${repo.url}/pulls?author=${username}&state=all&per_page=100&page=${pageNumber}`,
           {
@@ -134,6 +181,22 @@ async function getPRsMergedForUser(
     } while (pullsResponse?.data.length === 100);
 
     totalPrs += prsPerRepo;
+
+    try {
+      Logger.appendDebugLog(
+        `Storing last pr page info for user [${username}], repo [${repo.name}].`
+      );
+      Storage.store(`${username}_${repo.name}_last_pr_page`, pageNumber);
+      Storage.store(`${username}_${repo.name}_last_pr_count`, prsPerRepo);
+      Storage.store(
+        `${username}_${repo.name}_last_pr_page_count`,
+        numberOfRelevantPRsOnPage
+      );
+    } catch (error) {
+      Logger.appendError(
+        `Error storing last queried pr info for user [${username}], repo [${repo.name}]:  ${error}`
+      );
+    }
   }
 
   return totalPrs;

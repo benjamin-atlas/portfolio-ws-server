@@ -24,9 +24,10 @@ class Storage {
       }
       const fileContents: string = await readFile(this.DATASTORE_FILE, "utf-8");
       this.values = JSON.parse(fileContents);
+      this.isLoaded = true;
       return true;
     } catch (error: any) {
-      Logger.appendLog(error.toString());
+      Logger.appendError(error.toString());
       return false;
     }
   }
@@ -51,7 +52,7 @@ class Storage {
 
       if (!success) {
         Logger.appendError(
-          `Unable to load to fetch value [${key}] from storage.`
+          `Unable to load to store key/value [${key}]: [${value}] in storage.`
         );
       }
     }

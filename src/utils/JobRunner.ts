@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import Logger from "./Logger";
 
 class JobRunner {
   private jobs: Function[];
@@ -20,12 +21,20 @@ class JobRunner {
     if (!this.isRunning) {
       // First run on initialization
       this.jobs.forEach(async (job: Function) => {
-        this.emitter.emit("jobComplete", job());
+        const jobResult: any = await job();
+        this.emitter.emit("jobComplete", jobResult);
+        Logger.appendDebugLog("JobRunner emitting job complete.");
+        Logger.appendDebugLog("Job result:");
+        Logger.appendDebugLog(JSON.stringify(jobResult, null, 2));
       });
 
       this.intervalHandle = setInterval(() => {
         this.jobs.forEach(async (job: Function) => {
-          this.emitter.emit("jobComplete", await job());
+          const jobResult: any = await job();
+          this.emitter.emit("jobComplete", jobResult);
+          Logger.appendDebugLog("JobRunner emitting job complete.");
+          Logger.appendDebugLog("Job result:");
+          Logger.appendDebugLog(JSON.stringify(jobResult, null, 2));
         });
       }, this.INTERVAL);
 
