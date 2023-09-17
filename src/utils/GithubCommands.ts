@@ -60,7 +60,7 @@ async function getCommitsForUser(
       );
 
       if (lastQueriedPageNumber) {
-        pageNumber = lastQueriedPageNumber;
+        pageNumber = lastQueriedPageNumber - 1; // Subtract 1 to requery that page again as the amount may have changed.
       }
     } catch (error) {
       Logger.appendError(
@@ -135,8 +135,8 @@ async function getPRsMergedForUser(
       );
 
       if (lastPrPage && lastPrCount && lastPrCount) {
-        pageNumber = lastPrPage;
-        prsPerRepo = lastPrCount - lastPrPageCount; // subtract the amount of the last queried page, since we'll be querying it again for updates.
+        pageNumber = lastPrPage - 1; // Subtract 1 to requery that page again as the amount may have changed.
+        prsPerRepo = lastPrCount - lastPrPageCount; // subtract the amount of the last queried page.
       }
     } catch (error) {
       Logger.appendError(
