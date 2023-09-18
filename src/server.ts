@@ -59,7 +59,11 @@ server.on("connection", (socket: WebSocket) => {
     try {
       pfwsMessage = JSON.parse(message) as PortfolioWsMessage;
     } catch (error) {
-      socket.send(`Invalid message type received. Received "${message}".`);
+      socket.send(
+        JSON.stringify({
+          error: `Invalid message type received. Received "${message}".`,
+        })
+      );
       Logger.appendError(
         `Invalid message type received. Received "${message}". Error: ${error}`
       );
@@ -85,7 +89,9 @@ server.on("connection", (socket: WebSocket) => {
         break;
       default:
         socket.send(
-          `Invalid message type received. Received "${pfwsMessage.messageType}".`
+          JSON.stringify({
+            error: `Invalid message type received. Received "${pfwsMessage.messageType}".`,
+          })
         );
         invalidType = true;
     }
@@ -97,9 +103,6 @@ server.on("connection", (socket: WebSocket) => {
     }
 
     commandProcessor?.processCommand();
-
-    // Send a response back to the client
-    socket.send(`Message received!`);
   });
 
   socket.on("close", () => {
