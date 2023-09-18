@@ -10,7 +10,7 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     super();
   }
 
-  processCommand(): void {
+  public processCommand(): void {
     const { socket }: { socket: WebSocket } = this.props;
 
     Logger.appendDebugLog("GHS socket command processing...");
@@ -25,12 +25,20 @@ class GithubStatsCommandProcessor extends CommandProcessor {
       }
     });
 
-    this.props.jobRunnerEmitter.on("jobComplete", (metrics: GithubMetrics) => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(metrics));
-      }
-    });
+    this.props.jobRunnerEmitter.on("jobComplete", this.sendMetrics);
   }
+
+  public disposeEventEmitter(): void {
+    this.props.jobRunnerEmitter.removeListener("jobComplete", this.sendMetrics);
+  }
+
+  private sendMetrics = (metrics: GithubMetrics) => {
+    const { socket }: { socket: WebSocket } = this.props;
+
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(metrics));
+    }
+  };
 }
 
 export default GithubStatsCommandProcessor;
