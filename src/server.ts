@@ -55,9 +55,17 @@ server.on("connection", (socket: WebSocket) => {
   Logger.appendLog("Client connected");
 
   socket.on("message", (message: string) => {
-    const pfwsMessage: PortfolioWsMessage = JSON.parse(
-      message
-    ) as PortfolioWsMessage;
+    let pfwsMessage: PortfolioWsMessage;
+    try {
+      pfwsMessage = JSON.parse(message) as PortfolioWsMessage;
+    } catch (error) {
+      socket.send(`Invalid message type received. Received "${message}".`);
+      Logger.appendError(
+        `Invalid message type received. Received "${message}". Error: ${error}`
+      );
+      return;
+    }
+
     Logger.appendDebugLog(
       `Received message of type: ${pfwsMessage.messageType}`
     );

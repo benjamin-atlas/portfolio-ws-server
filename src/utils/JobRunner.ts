@@ -3,13 +3,16 @@ import Logger from "./Logger";
 
 class JobRunner {
   private jobs: Function[];
-  private readonly INTERVAL: number = 600000;
+  private SERVICE_INTERVAL_MILLISECONDS: number;
   private intervalHandle: NodeJS.Timeout | undefined;
   private isRunning: boolean;
   private emitter: EventEmitter;
 
   constructor(jobs: Function[]) {
     this.jobs = [...jobs];
+    this.SERVICE_INTERVAL_MILLISECONDS = parseInt(
+      process.env.SERVICE_INTERVAL_MILLISECONDS as string
+    );
     this.intervalHandle = undefined;
     this.isRunning = false;
     this.emitter = new EventEmitter();
@@ -36,7 +39,7 @@ class JobRunner {
           Logger.appendDebugLog("Job result:");
           Logger.appendDebugLog(JSON.stringify(jobResult, null, 2));
         });
-      }, this.INTERVAL);
+      }, this.SERVICE_INTERVAL_MILLISECONDS);
 
       this.isRunning = true;
     }
