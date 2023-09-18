@@ -26,10 +26,16 @@ class GithubStatsCommandProcessor extends CommandProcessor {
     });
 
     this.props.jobRunnerEmitter.on("jobComplete", this.sendMetrics);
-  }
 
-  public disposeEventEmitter(): void {
-    this.props.jobRunnerEmitter.removeListener("jobComplete", this.sendMetrics);
+    socket.on("close", () => {
+      Logger.appendDebugLog(
+        "Cleaning up jobComplete listener for GH command processor."
+      );
+      this.props.jobRunnerEmitter.removeListener(
+        "jobComplete",
+        this.sendMetrics
+      );
+    });
   }
 
   private sendMetrics = (metrics: GithubMetrics) => {

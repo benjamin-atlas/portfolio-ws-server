@@ -103,9 +103,9 @@ server.on("connection", (socket: WebSocket) => {
     }
 
     commandProcessor?.processCommand();
+  });
 
-    socket.on("close", () => {
-      Logger.appendLog("Client disconnected. Unsubscribing event emitter.");
-    });
+  socket.on("close", () => {
+    Logger.appendLog("Client disconnected.");
   });
 });
