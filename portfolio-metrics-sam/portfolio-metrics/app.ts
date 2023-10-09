@@ -3,6 +3,7 @@ import GithubMetrics from './types/GithubMetrics';
 import Storage from './utils/Storage';
 import { getGHUserMetrics } from './utils/GithubCommands';
 import Logger from './utils/Logger';
+import * as AWS from 'aws-sdk';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
@@ -34,7 +35,21 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         try {
             await Storage.synchronize();
         } catch (error) {
-            throw new Error(`Unable to synchronize values to gh-metrics-store. Error: ${error}`);
+            throw new Error(`Unable to synchronize values to gh-metrics-store.`);
+        }
+
+        try {
+            const lambda = new AWS.Lambda();
+            const params: AWS.Lambda.InvocationRequest = {
+                FunctionName: 'broadcast-sam-BroadcastFunction-2m5m3SaA4Gm6',
+                InvocationType: 'RequestResponse',
+                Payload: JSON.stringify({ body: JSON.stringify({ message: aggregateMetrics }) }),
+            };
+
+            await lambda.invoke(params).promise();
+
+        } catch {
+            throw new Error(`Unable to broadcast message to other clients.`);   
         }
 
         return {

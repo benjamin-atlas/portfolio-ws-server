@@ -5,18 +5,20 @@ import * as AWS from 'aws-sdk';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
-        Logger.appendLog(`Connect happens. Connection ID: ${event.requestContext.connectionId ?? ""}`);
         let activeConnectionRecords: AWS.DynamoDB.ItemList;
         let broadcastMessage: string;
         try {
+            Logger.appendLog(`Passed in value: ${JSON.stringify(event)}`);
             if (event.body) {
                 broadcastMessage = JSON.parse(event.body).message
             } else {
-                throw new Error("Event property \"body\" was not present in the request. Will not broadcast");
+                throw new Error(`Event property \"body\" was not present in the request. Will not broadcast. Event object details:\n${JSON.stringify(event)}`);
             }
+
+            Logger.appendLog(broadcastMessage);
         } catch (error: any) {
             Logger.appendError(error);
-            throw new Error(`Could not parse message passed into broadcaster. Message:\n${event.body}`);
+            throw new Error(`Could not parse message passed into broadcaster. Message:\n${JSON.stringify(event)}`);
         }
 
         try {
