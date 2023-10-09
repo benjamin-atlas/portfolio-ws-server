@@ -11,7 +11,7 @@
     "compile": "tsc",
     "test": "npm run compile && npm run unit",
     "dev": "cd ../; sam build; sam local invoke",
-    "deploy": "cd ../; sam build; sam deploy"
+    "deploy": "cd ../; sam build; sam deploy  --no-confirm-changeset"
   },
   "dependencies": {
     "esbuild": "^0.14.14"

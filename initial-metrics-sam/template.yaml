@@ -1,31 +1,32 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  connect-sam
+  initial-metrics-sam
 
-  Sample SAM Template for connect-sam
+  Sample SAM Template for initial-metrics-sam
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 900
+
     Tracing: Active
   Api:
     TracingEnabled: true
 Resources:
-  ConnectFunction:
+  InitialMetricsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: connect/
+      CodeUri: initial-metrics/
       Handler: app.lambdaHandler
       Runtime: nodejs18.x
       Architectures:
       - x86_64
       Events:
-        Connect:
+        InitialMetrics:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /connect
+            Path: /initial-metrics
             Method: get
       MemorySize: 512
     Metadata: # Manage esbuild properties
@@ -54,12 +55,12 @@ Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  ConnectApi:
-    Description: API Gateway endpoint URL for Prod stage for Connect function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/connect/"
-  ConnectFunction:
-    Description: Connect Lambda Function ARN
-    Value: !GetAtt ConnectFunction.Arn
-  ConnectFunctionIamRole:
-    Description: Implicit IAM Role created for Connect function
-    Value: !GetAtt ConnectFunctionRole.Arn
+  InitialMetricsApi:
+    Description: API Gateway endpoint URL for Prod stage for InitialMetrics function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/initial-metrics/"
+  InitialMetricsFunction:
+    Description: InitialMetrics Lambda Function ARN
+    Value: !GetAtt InitialMetricsFunction.Arn
+  InitialMetricsFunctionIamRole:
+    Description: Implicit IAM Role created for InitialMetrics function
+    Value: !GetAtt InitialMetricsFunctionRole.Arn

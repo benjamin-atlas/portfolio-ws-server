@@ -1,8 +1,9 @@
 {
-  "name": "connect-lambda",
+  "name": "hello_world",
   "version": "1.0.0",
-  "description": "Lambda to establish connections and store their IDs to DynamoDB.",
+  "description": "hello world sample for NodeJS",
   "main": "app.js",
+  "repository": "https://github.com/awslabs/aws-sam-cli/tree/develop/samcli/local/init/templates/cookiecutter-aws-sam-hello-nodejs",
   "author": "SAM CLI",
   "license": "MIT",
   "scripts": {
@@ -11,7 +12,7 @@
     "compile": "tsc",
     "test": "npm run compile && npm run unit",
     "dev": "cd ../; sam build; sam local invoke",
-    "deploy": "cd ../; sam build; sam deploy  --no-confirm-changeset"
+    "deploy": "cd ../; sam build; sam deploy --no-confirm-changeset"
   },
   "dependencies": {
     "aws-sdk": "^2.1472.0",
