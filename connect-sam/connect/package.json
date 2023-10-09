@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Lambda to establish connections and store their IDs to DynamoDB.",
   "main": "app.js",
-  "author": "SAM CLI",
+  "author": "Benjamin Atlas",
   "license": "MIT",
   "scripts": {
     "unit": "jest",

@@ -11,9 +11,10 @@
     "compile": "tsc",
     "test": "npm run compile && npm run unit",
     "dev": "cd ../; sam build; sam local invoke",
-    "deploy": "cd ../; sam build; sam deploy  --no-confirm-changeset"
+    "deploy": "cd ../; sam build; sam deploy --no-confirm-changeset"
   },
   "dependencies": {
+    "aws-sdk": "^2.1472.0",
     "esbuild": "^0.14.14"
   },
   "devDependencies": {
